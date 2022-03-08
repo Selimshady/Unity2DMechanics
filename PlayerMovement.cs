@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerMovement : MonoBehaviour
+public class Movement : MonoBehaviour
 {
     public float moveSpeed;
     public float jumpForce;
@@ -14,17 +14,24 @@ public class PlayerMovement : MonoBehaviour
 
     private Animator animator;
     private string currentState;
-    const string idle = "Rogue_idle_01";
-    const string run = "Rogue_run_01";
+
+    const string fall = "mainCharacter_fall";
+    const string doubleJump = "mainCharacter_doubleJump";
+    const string idle = "mainCharacter_idle";
+    const string jump = "mainCharacter_jump";
+    const string run = "Run";
     
 
     private Rigidbody2D rb;
     private bool facingRight = true;
+
     private float moveDirection;
     private bool isJumping = false;
+    private bool doubleJumping = false;
+
+
     private bool isGrounded;
     private int jumpCount;
-
     
 
     private void Awake() {
@@ -51,7 +58,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void CheckGround()
     {
-        isGrounded = Physics2D.OverlapBox(groundCheck.position,new Vector2(1f,0.1f),0f,groundObjects);
+        isGrounded = Physics2D.OverlapBox(groundCheck.position,new Vector2(0.4f,checkRadius),0f,groundObjects);
         if (isGrounded)
         {
             jumpCount = maxJumpCount;
@@ -61,12 +68,15 @@ public class PlayerMovement : MonoBehaviour
     private void Move()
     {
         rb.velocity = new Vector2(moveDirection * moveSpeed, rb.velocity.y);
-        if(isJumping) 
+        if(isJumping || doubleJumping) 
         {
             rb.velocity = new Vector2(0f,jumpForce);
             jumpCount--;
+            isJumping = false;
+            doubleJumping = false;
         }
-        isJumping = false;  
+        if(rb.velocity.y < 0 && !isGrounded)
+            changeAnimationState(fall);
     }
 
     private void Animate()
@@ -82,7 +92,10 @@ public class PlayerMovement : MonoBehaviour
         moveDirection = Input.GetAxis("Horizontal");
         if(Input.GetButtonDown("Jump") && jumpCount > 0) 
         {
-            isJumping  = true; 
+            if(jumpCount <= maxJumpCount-1)
+                doubleJumping = true;
+            else
+                isJumping  = true; 
         }
     }
 
@@ -94,10 +107,20 @@ public class PlayerMovement : MonoBehaviour
 
     void changeAnimations() 
     {
-        if(moveDirection != 0)
-            changeAnimationState(run);
+        if(isGrounded) 
+        {
+            if(moveDirection != 0)
+                changeAnimationState(run);
+            else
+                changeAnimationState(idle);
+        }
         else
-            changeAnimationState(idle);
+        {
+            if(doubleJumping)
+                changeAnimationState(doubleJump); 
+            else if(rb.velocity.y > 0 && jumpCount==maxJumpCount-1 )
+                changeAnimationState(jump);
+        }
     }
 
     void changeAnimationState(string newState) 
@@ -111,7 +134,7 @@ public class PlayerMovement : MonoBehaviour
 
 
     private void OnDrawGizmos() {
-        Gizmos.DrawWireCube(groundCheck.position,new Vector2(1f,0.1f));
+        Gizmos.DrawWireCube(groundCheck.position,new Vector2(0.4f,checkRadius));
     }
 
 }
