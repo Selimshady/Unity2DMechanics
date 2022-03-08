@@ -5,22 +5,16 @@ using UnityEngine;
 public class PickUpCoin : MonoBehaviour
 {
     public AudioClip soundEffect;
-    private void OnTriggerEnter2D(Collider2D other) 
+
+
+    public void TakeCoin()
     {
-        PlayerManager manager = other.GetComponent<PlayerManager>();
-        if(manager)
+        PlayerManager manager = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerManager>();
+        if(manager.pickUpItem(gameObject))
         {
-            if(manager.pickUpItem(gameObject))
-            {
-                RemoveItem();
-            }
+            Debug.Log("Coin is taken");
+            AudioManager.instance.playClip(soundEffect);
+            Destroy(gameObject);
         }
-    }
-
-    private void RemoveItem()
-    {
-
-        AudioManager.instance.playClip(soundEffect);
-        Destroy(gameObject);
     }
 }
